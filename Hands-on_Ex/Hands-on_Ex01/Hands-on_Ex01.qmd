@@ -1,6 +1,5 @@
 ---
 title: "1  A Layered Grammar of Graphics: ggplot2 methods"
-author: "Ci Hui"
 date: "January 14, 2024"
 date-modified: "last-modified"
 execute: 
@@ -41,7 +40,6 @@ exam_data <- read_csv("data/Exam_data.csv")
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 head(exam_data,10)
 ```
 
@@ -49,7 +47,6 @@ head(exam_data,10)
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 summary(exam_data)
 ```
 
@@ -75,7 +72,6 @@ First, let us compare how R Graphics, the core graphical functions of Base R and
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 hist(exam_data$MATHS)
 ```
 
@@ -83,7 +79,6 @@ hist(exam_data$MATHS)
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, aes(x = MATHS)) +
   geom_histogram(bins=10, 
                  boundary = 100,
@@ -193,7 +188,6 @@ Plotting a simple bar chart by using [`geom_bar()`](https://ggplot2.tidyverse.or
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data,
        aes(x = RACE)) +
   geom_bar()
@@ -207,7 +201,6 @@ Plotting a dot plot by using [`geom_dotplot()`](https://ggplot2.tidyverse.org/re
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, 
        aes(x = MATHS)) +
   geom_dotplot(dotsize = 0.5)
@@ -238,7 +231,6 @@ Plotting a simple histogram by using [`geom_histogram()`](https://ggplot2.tidyve
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, 
        aes(x = MATHS)) +
   geom_histogram()
@@ -294,7 +286,6 @@ Plotting the distribution of Maths scores in a kernel density estimate plot:
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, 
        aes(x = MATHS)) +
   geom_density()
@@ -304,7 +295,6 @@ Plotting two kernel density lines by using *color* or *fill* arguments of `aes()
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, 
        aes(x = MATHS, 
            fill = GENDER,
@@ -320,7 +310,6 @@ Plotting boxplots by using `geom_boxplot()`:
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, 
        aes(y = MATHS,       
            x= GENDER)) +    
@@ -333,7 +322,6 @@ Plotting the distribution of Maths scores by gender in notched plot instead of b
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, 
        aes(y = MATHS, 
            x= GENDER)) +
@@ -348,7 +336,6 @@ Plotting the distribution of Maths score by gender in violin plot:
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, 
        aes(y = MATHS, 
            x= GENDER)) +
@@ -363,7 +350,6 @@ Plotting a scatterplot showing the Maths and English grades of pupils by using `
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, 
        aes(x= MATHS, 
            y=ENGLISH)) +
@@ -376,7 +362,6 @@ Plotting the data points on the boxplots by using both `geom_boxplot()` and `geo
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, 
        aes(y = MATHS, 
            x= GENDER)) +
@@ -400,7 +385,6 @@ The boxplots below are incomplete because the positions of the means were not sh
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, 
        aes(y = MATHS, x= GENDER)) +
   geom_boxplot()
@@ -440,7 +424,6 @@ The scatterplot below shows the relationship of Maths and English grades of pupi
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, 
        aes(x= MATHS, y=ENGLISH)) +
   geom_point() +
@@ -470,7 +453,6 @@ Plotting a trellis plot using `facet-wrap()`:
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, 
        aes(x= MATHS)) +
   geom_histogram(bins=20) +
@@ -485,7 +467,6 @@ Plotting a trellis plot using `facet_grid()`:
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, 
        aes(x= MATHS)) +
   geom_histogram(bins=20) +
@@ -507,7 +488,6 @@ By the default, the bar chart of ggplot2 is in vertical form.
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, 
        aes(x=RACE)) +
   geom_bar()
@@ -528,7 +508,6 @@ The scatterplot on the right is slightly misleading because the y-aixs and x-axi
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, 
        aes(x= MATHS, y=ENGLISH)) +
   geom_point() +
@@ -572,7 +551,6 @@ A horizontal bar chart plotted using `theme_gray()`:
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, 
        aes(x=RACE)) +
   geom_bar() +
@@ -586,7 +564,6 @@ A horizontal bar chart plotted using `theme_classic()`:
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, 
        aes(x=RACE)) +
   geom_bar() +
@@ -600,7 +577,6 @@ A horizontal bar chart plotted using `theme_minimal()`.
 
 ```{r}
 #| code-fold: true
-#| code-tool: true
 ggplot(data=exam_data, 
        aes(x=RACE)) +
   geom_bar() +
