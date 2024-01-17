@@ -19,7 +19,7 @@ This website serves as a comprehensive repository of the visual analytics journe
 To explore my learning journey, simply navigate through the tabs on the top. Each tab corresponds to a different aspect of the course, providing you with a structured and organized way to follow my progression.
 
 |                                                                      |                                                                      |                                                                      |
-|:----------------------:|:----------------------:|:----------------------:|
+|:--------------------------------------------------------------------:|:--------------------------------------------------------------------:|:--------------------------------------------------------------------:|
 | ![](images/clipboard-2383612098.png){fig-align="center" width="180"} | ![](images/clipboard-3832021204.png){fig-align="center" width="180"} | ![](images/clipboard-2600415027.png){fig-align="center" width="180"} |
 |                         *Hands-on Exercises*                         |                         *In-class Exercises*                         |                        *Take-home Exercises*                         |
 
