@@ -123,7 +123,7 @@
     "href": "In-class_Ex/In-class_Ex01/In-class_Ex01.html#importing-pisa-data",
     "title": "In-Class Exercise 1: Now You See It!",
     "section": "Importing PISA data",
-    "text": "Importing PISA data\nThe code chunk below uses read_sas() of haven to import PISA data into R environment.\n\n# eval:false\nstu_qqq &lt;- read_sas(\"data/cy08msp_stu_qqq.sas7bdat\")\n\nThe code chunk below uses filter() of dplyr to filter where country (CNT) is Singapore (SGP).\n\nstu_qqq_SG &lt;- stu_qqq %&gt;%\nfilter(CNT == \"SGP\")\n\nwrite_rds() is a function to save an R object in a file using the RDS (R Data Serialization) file format. read_rds() is a function used to read an R object from a file in the RDS format. RDS is a binary format that allows you to save and load R objects efficiently.\n\nwrite_rds(stu_qqq_SG,\"data/stu_qqq_SG.rds\")\n\n\nstu_qqq_SG &lt;- read_rds(\"data/stu_qqq_SG.rds\")"
+    "text": "Importing PISA data\nThe code chunk below uses read_sas() of haven to import PISA data into R environment.\n\nstu_qqq &lt;- read_sas(\"data/cy08msp_stu_qqq.sas7bdat\")\n\nThe code chunk below uses filter() of dplyr to filter where country (CNT) is Singapore (SGP).\n\nstu_qqq_SG &lt;- stu_qqq %&gt;%\nfilter(CNT == \"SGP\")\n\nwrite_rds() is a function to save an R object in a file using the RDS (R Data Serialization) file format. read_rds() is a function used to read an R object from a file in the RDS format. RDS is a binary format that allows you to save and load R objects efficiently.\n\nwrite_rds(stu_qqq_SG,\"data/stu_qqq_SG.rds\")\n\n\nstu_qqq_SG &lt;- read_rds(\"data/stu_qqq_SG.rds\")"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex02/Hands-on_Ex02.html",

@@ -35,6 +35,7 @@ stu_qqq <- read_sas("data/cy08msp_stu_qqq.sas7bdat")
 The code chunk below uses [filter()](https://dplyr.tidyverse.org/reference/filter.html) of [dplyr](https://dplyr.tidyverse.org/) to filter where country (CNT) is Singapore (SGP).
 
 ```{r}
+#| eval: false
 stu_qqq_SG <- stu_qqq %>%
 filter(CNT == "SGP")
 ```
@@ -42,9 +43,11 @@ filter(CNT == "SGP")
 [write_rds()](https://readr.tidyverse.org/reference/read_rds.html) is a function to save an R object in a file using the RDS (R Data Serialization) file format. [read_rds()](https://readr.tidyverse.org/reference/read_rds.html) is a function used to read an R object from a file in the RDS format. RDS is a binary format that allows you to save and load R objects efficiently.
 
 ```{r}
+#| eval: false
 write_rds(stu_qqq_SG,"data/stu_qqq_SG.rds")
 ```
 
 ```{r}
+#| eval: false
 stu_qqq_SG <- read_rds("data/stu_qqq_SG.rds")
 ```
