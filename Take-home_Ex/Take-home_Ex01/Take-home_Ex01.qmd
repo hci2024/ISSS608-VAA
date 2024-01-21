@@ -1,0 +1,389 @@
+---
+title: "Take-home Exercise 1: Creating data visualisation beyond default"
+date: "January 17, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  warning: false
+editor: visual
+---
+
+## 1 Overview
+
+### 1.1 Setting the Scene
+
+OECD education director Andreas Schleicher shared in a BBC article that “Singapore managed to achieve excellence without wide differences between children from wealthy and disadvantaged families.” (2016) Furthermore, several Singapore’s Minister for Education also started an “every school a good school” slogan. The general public, however, strongly belief that there are still disparities that exist, especially between the elite schools and neighborhood school, between students from families with higher socioeconomic status and those with relatively lower socioeconomic status and immigration and non-immigration families.
+
+### 1.2 The Task
+
+The 2022 Programme for International Student Assessment (PISA) data was released on December 5, 2022. PISA global education survey every three years to assess the education systems worldwide through testing 15 year old students in the subjects of mathematics, reading, and science.
+
+In this take-home exercise, we are required to use appropriate **Exploratory Data Analysis (EDA)** methods and **ggplot2** functions to reveal:
+
+-   the distribution of Singapore students’ performance in mathematics, reading, and science, and
+
+-   the relationship between these performances with schools, gender and socioeconomic status of the students.
+
+## 2 Getting Started
+
+### 2.1 Installing and loading the required R packages
+
+In this exercise, we use p_load() of pacman package to load required R packages. The packages that will be used are:
+
+-   *tidyverse*
+
+-   *haven*
+
+-   *ggthemes*
+
+-   *ggdist*
+
+```{r}
+#| code-fold: true
+pacman::p_load(ggthemes, ggdist, haven,tidyverse)
+```
+
+### 2.2 Importing the data
+
+The [PISA 2022 database](https://www.oecd.org/pisa/data/2022database/) contains the full set of responses from individual students, school principals and parents. These data files are in SAS and SPSS formats. For the purpose of this exercise, we will use the **Student questionnaire data file** only.
+
+::: panel-tabset
+## Import
+
+The code chunk below uses `read_sas()` of *haven* to import PISA data into R environment.
+
+```{r}
+#| eval: false
+stu_qqq <- read_sas("data/cy08msp_stu_qqq.sas7bdat")
+```
+
+Since we will only focus on Singapore data, the code chunk below uses `filter()` of *dplyr* (one of the *tidyverse* package) to filter where country (CNT) is Singapore (SGP).
+
+```{r}
+#| eval: false
+stu_qqq_SG <- stu_qqq %>%
+filter(CNT == "SGP")
+```
+
+We will then save the object to an RDS file and load the file into the working environment.
+
+```{r}
+#| eval: false
+write_rds(stu_qqq_SG,"data/stu_qqq_SG.rds")
+```
+
+```{r}
+stu_qqq_SG <- read_rds("data/stu_qqq_SG.rds")
+```
+
+::: callout-note
+-   RDS(R Data Serialization) is a binary format that allows you to save and load R objects efficiently.
+-   `write_rds()` is a function to save an R object in a file using the RDS file format.
+-   `read_rds()` is a function used to read an R object from a file in the RDS format.
+:::
+
+## Preview
+
+```{r}
+#| code-fold: true
+#| code-overflow: scroll
+head(stu_qqq_SG)
+```
+:::
+
+## 3 Data Wrangling
+
+### 3.1 Subset Selection
+
+We will select our variables of interest from 1279 variables and narrow them down to 6 variables. They are:
+
+-   *CNTSCHID*: Intl. School ID
+
+-   *ST004D01T*: Student Gender
+
+-   *ESCS*: Index of economic, social and cultural status
+
+-   *PV1MATH*: Plausible Value 1 in Mathematics
+
+-   *PV1READ*: Plausible Value 1 in Reading
+
+-   *PV1SCIE*: Plausible Value 1 in Science
+
+::: callout-note
+-   The data dictionary of description to variables can be found in [Codebook](https://webfs.oecd.org/pisa2022/CY08MSP_CODEBOOK_5thDecember23.xlsx), and [Technical Report](https://www.oecd.org/pisa/data/pisa2022technicalreport/PISA-2022-Technical-Report-Ch-19-PISA-Scaling-Procedures-Construct-Validation-Context-Questionnaire-Data.pdf), under *Student Questionnaire derived variables* section.
+-   Working with Plausible Values: According to the [PISA website](https://www.oecd.org/pisa/data/httpoecdorgpisadatabase-instructions.htm), plausible values should not be averaged at the student level. Although it is highly recommended to use all the available plausible values in order to improve the accuracy of the estimates, during the exploratory phase of the data, statistical analyses can be based on a single plausible value as PISA analysts indicate that using one or five plausible values in a large sample does not really make a substantial difference([ref](https://www.mdpi.com/2227-7390/9/13/1579)).
+:::
+
+We will then further rename them to more descriptive names.
+
+::: panel-tabset
+## Code
+
+```{r}
+#| eval: false
+stu_qqq_SG_subset <- stu_qqq_SG %>%
+  select('CNTSCHID','ST004D01T','ESCS','PV1MATH','PV1READ','PV1SCIE')
+       
+stu_qqq_SG_subset <- stu_qqq_SG_subset %>%
+  rename('School_ID'='CNTSCHID',
+         'Gender'='ST004D01T',
+         'Socioeconomic_status'='ESCS',
+         'Math'='PV1MATH',
+         'Reading'='PV1READ',
+         'Science'='PV1SCIE')
+```
+
+## Preview the subset
+
+```{r}
+#| echo: false
+stu_qqq_SG_subset <- stu_qqq_SG %>%
+  select('CNTSCHID','ST004D01T','ESCS','PV1MATH','PV1READ','PV1SCIE')
+       
+stu_qqq_SG_subset <- stu_qqq_SG_subset %>%
+  rename('School_ID'='CNTSCHID',
+         'Gender'='ST004D01T',
+         'Socioeconomic_status'='ESCS',
+         'Math'='PV1MATH',
+         'Reading'='PV1READ',
+         'Science'='PV1SCIE')
+head(stu_qqq_SG_subset)
+```
+:::
+
+### 3.2 Data Cleaning
+
+We will check for missing values or duplicates and remove those rows, if there are any.
+
+::: panel-tabset
+## Check for missing values
+
+```{r}
+sum(is.na(stu_qqq_SG_subset))
+```
+
+## Check for duplicates
+
+```{r}
+sum(duplicated(stu_qqq_SG_subset) | duplicated(stu_qqq_SG_subset, fromLast = TRUE))
+```
+
+## Remove
+
+The code chunk below is to remove the missing values, since there are 47 missing valuse found.
+
+```{r}
+subset_clean <- na.omit(stu_qqq_SG_subset)
+```
+:::
+
+### 3.3 Data Type Conversion
+
+Looking at the structure of the prepared subset, we find that all variable are cast as `<dbl>`, which refers to the data type "double." It is a numeric variable with double-precision floating-point numbers.
+
+::: panel-tabset
+## Preview the subset
+
+```{r}
+#| code-fold: true
+head(subset_clean)
+```
+
+## Structure
+
+```{r}
+#| code-fold: true
+str(subset_clean)
+```
+:::
+
+We need to convert some variables into appropriate data types, they are:
+
+-   *School_ID* will be cast as `character` using `as.character()`. `character` represents text or strings.
+
+-   *Gender* will be cast as `factor` using `as.factor()`. `factor` represents categorical data. It is used when the data has a limited number of distinct values.
+
+::: panel-tabset
+## Code
+
+```{r}
+subset_clean$School_ID <- as.character(subset_clean$School_ID)
+
+subset_clean$Gender <- as.factor(subset_clean$Gender)
+```
+
+## Preview
+
+```{r}
+#| code-fold: true
+head(subset_clean)
+```
+
+## Structure
+
+```{r}
+#| code-fold: true
+str(subset_clean)
+```
+:::
+
+### 3.4 Variable Recoding
+
+The `recode()` function of *dplyr* will be used to replace the values for variable "Gender", where
+
+*1* -\> *Female* and
+
+*2* -\> *Male*.
+
+::: panel-tabset
+## Code
+
+```{r}
+subset_clean <- subset_clean %>%
+  mutate(Gender=(recode(Gender, '1'="Female", 
+                        '2'="Male")))
+```
+
+## Preview
+
+```{r}
+#| code-fold: true
+head(subset_clean)
+```
+:::
+
+## 4 Exploratory Data Analysis
+
+### 4.1 The distribution of Singapore students’ performance in mathematics, reading, and science
+
+We will plot a Half-Eye graph by using `stat_halfeye()` of *ggdist* package to show the distribution of performance in different subjects. Next, we will add the second geometry layer using `geom_boxplot()`, and add mean values by using `stat_summary()`.
+
+Before that, the `gather()` function of *tidyverse* will be used to reshape the data from wide to long format.
+
+```{r}
+#| code-fold: true
+# Reshape the data using gather
+data_long <- tidyr::gather(data=subset_clean, key = "subject", value = "score", 4:6)
+
+# Create the plot
+ggplot(data_long, 
+       aes(x = score, 
+           y = subject)) +
+
+  stat_halfeye(aes(fill=subject),
+               adjust = .5,
+               justification = -0.2,
+               .width = 0,
+               point_colour = NA,
+               alpha = .75) +
+  scale_fill_brewer(palette="Spectral")+
+  geom_boxplot(width = .20,
+               outlier.shape = NA,
+               alpha = 0.25) + 
+  stat_summary(geom = "point",       
+               fun.y="mean",         
+               colour ="red",        
+               size=2) +
+  labs(x = "Score", 
+       y = NULL, 
+       title = "The distribution of performance in different subjects")+
+  theme_stata() +
+  theme(legend.position = "none")
+```
+
+::: callout-tip
+## Observations
+
+-   Symmetrical curves seem to mirror Normal distributions across subjects.
+
+-   The range and distribution shape of scores in the three subjects seem very similar.
+
+-   Mathematics exhibits the highest median and average score compared to the other two subjects.
+:::
+
+### 4.2 The relationship between the performances with gender and socioeconomic status
+
+**4.2.1 The relationship between the performances with gender**
+
+```{r}
+#| code-fold: true
+ggplot(data_long, 
+       aes(y = score, x= Gender, fill = Gender)) +
+  geom_boxplot() +
+  facet_wrap(~ subject) +
+  labs(y = "Score", 
+      title = "The relationship between the performances and gender")+
+  theme_stata()  +
+  theme(legend.position = "none")
+```
+
+::: callout-tip
+## Observations
+
+-   Overall, gender seems not affecting much on the performances across subjects, as there's no obvious difference in score in the boxplots.
+
+-   Male students performed slightly better than female students in mathematics, while female students performed slightly better than male students in reading.
+:::
+
+**4.2.2 The relationship between the performances with socioeconomic status**
+
+Firstly, we will plot a histogram to understand the target variable "socioeconomic_status"
+
+```{r}
+#| code-fold: true
+ggplot(data=data_long, 
+       aes(x = Socioeconomic_status)) +
+  geom_histogram(color="grey25",
+                 fill="grey90")
+```
+
+Given the abundance of data points, we will categorize them into four distinct groups before proceeding to create the visualization. They are: "*\< -2", "-2 - 0", "0 - 2", "\> 2".*
+
+This categorization aims to enhance clarity and facilitate a more focused and meaningful presentation of the information.
+
+::: panel-tabset
+## Code
+
+```{r}
+breaks <- c(-4, -2, 0, 2, 4)
+labels <- c("< -2", "-2 - 0", "0 - 2", "> 2")
+bins <- cut(data_long$Socioeconomic_status, breaks = breaks, labels = labels, include.lowest = TRUE)
+
+data_long <- data_long %>%
+  mutate(Socioeconomic = bins)
+```
+## Preview
+
+```{r}
+#| code-fold: true
+head(data_long)
+```
+:::
+
+```{r}
+#| code-fold: true
+ggplot(data_long, 
+       aes(y = score, x= Socioeconomic, fill = Socioeconomic)) +
+  scale_fill_brewer(palette="Spectral")+
+  geom_boxplot() +
+  facet_wrap(~ subject) +
+  labs(y = "Score", 
+      title = "The relationship between the performances and socioeconomic status")+
+  theme_stata()  +
+  theme(legend.position = "none")
+```
+
+::: callout-tip
+## Observations
+
+-   Students with higher socioeconomic score performed better across all three subjects.
+
+-   There's not much difference on performaces for students with positive socioeconomic score, no matter above 2 or not.
+:::
+
+## 5 Conclusion
+
+Through this exercise, we illustrated the utility of interactive and statistical plots in comprehending and analyzing PISA data.
+
+In Section 4, we employed diverse visualizations to delve into the data, unraveling its distribution, relationships, and patterns. We compared the distributions of the three different subjects - mathematics, reading, and science, and revealed that the shape of the scores in the three subjects seem very similar. Additionaly, our exploration also revealed correlations such as higher socioeconomic status score being linked to better performances across different subjects.
