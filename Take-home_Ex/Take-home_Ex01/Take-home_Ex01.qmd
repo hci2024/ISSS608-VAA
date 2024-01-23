@@ -41,7 +41,7 @@ In this exercise, we use p_load() of pacman package to load required R packages.
 
 ```{r}
 #| code-fold: true
-pacman::p_load(ggthemes, ggdist, haven,tidyverse)
+pacman::p_load(ggthemes, ggdist, haven, tidyverse)
 ```
 
 ### 2.2 Importing the data
@@ -261,12 +261,22 @@ We will plot a Half-Eye graph by using `stat_halfeye()` of *ggdist* package to s
 
 Before that, the `gather()` function of *tidyverse* will be used to reshape the data from wide to long format.
 
+::: panel-tabset
+## Code
+
+```{r}
+data_long <- gather(data=subset_clean, key = "subject", value = "score", 4:6)
+```
+## Preview
+
 ```{r}
 #| code-fold: true
-# Reshape the data using gather
-data_long <- tidyr::gather(data=subset_clean, key = "subject", value = "score", 4:6)
+head(data_long)
+```
+:::
 
-# Create the plot
+```{r}
+#| code-fold: true
 ggplot(data_long, 
        aes(x = score, 
            y = subject)) +
@@ -277,12 +287,12 @@ ggplot(data_long,
                .width = 0,
                point_colour = NA,
                alpha = .75) +
-  scale_fill_brewer(palette="Spectral")+
+  scale_fill_brewer()+
   geom_boxplot(width = .20,
                outlier.shape = NA,
                alpha = 0.25) + 
   stat_summary(geom = "point",       
-               fun.y="mean",         
+               fun.y = "mean",         
                colour ="red",        
                size=2) +
   labs(x = "Score", 
@@ -302,15 +312,20 @@ ggplot(data_long,
 -   Mathematics exhibits the highest median and average score compared to the other two subjects.
 :::
 
-### 4.2 The relationship between the performances with gender and socioeconomic status
+### 4.2 The relationship between the performances with gender, schools and socioeconomic status
 
-**4.2.1 The relationship between the performances with gender**
+#### **4.2.1 Gender**
 
 ```{r}
 #| code-fold: true
 ggplot(data_long, 
        aes(y = score, x= Gender, fill = Gender)) +
   geom_boxplot() +
+  stat_summary(geom = "point",       
+               fun.y = "mean",         
+               colour ="red",        
+               size=2)+
+  scale_fill_brewer()+
   facet_wrap(~ subject) +
   labs(y = "Score", 
       title = "The relationship between the performances and gender")+
@@ -321,14 +336,89 @@ ggplot(data_long,
 ::: callout-tip
 ## Observations
 
--   Overall, gender seems not affecting much on the performances across subjects, as there's no obvious difference in score in the boxplots.
+-   Overall, gender seems not affecting much on the performances across subjects, as there's no obvious difference in score in the above boxplots.
 
--   Male students performed slightly better than female students in mathematics, while female students performed slightly better than male students in reading.
+-   Male students demonstrated slightly better performance than female students in mathematics, while female students performed slightly better than male students in reading. However, in science, the difference between males and females are minimal.
 :::
 
-**4.2.2 The relationship between the performances with socioeconomic status**
+#### **4.2.2 School**
 
-Firstly, we will plot a histogram to understand the target variable "socioeconomic_status"
+Firstly, let's look at the overall count of schools present in our dataset.
+
+```{r}
+length(unique(data_long$School_ID))
+```
+
+With the aim of investigating the correlation between schools and student performance, we will compute the mean score of students for each school.
+
+::: panel-tabset
+## Code
+
+```{r}
+data_sch <- data_long %>%
+  group_by(School_ID,subject) %>%
+  summarize(mean_score = mean(score))
+```
+
+## Preview
+
+```{r}
+#| code-fold: true
+head(data_sch)
+```
+:::
+
+```{r}
+#| code-fold: true
+ggplot(data_sch, 
+       aes(x = mean_score, 
+           y = subject)) +
+
+  stat_halfeye(aes(fill=subject),
+               adjust = .5,
+               justification = -0.2,
+               .width = 0,
+               point_colour = NA,
+               alpha = .75) +
+  scale_fill_brewer()+
+  geom_boxplot(width = .20,
+               alpha = 0.25,
+               outlier.colour = "black", 
+               outlier.size = 3) + 
+  stat_summary(geom = "point",       
+               fun.y = "mean",         
+               colour ="red",        
+               size=2) +
+  labs(x = "Score", 
+       y = NULL, 
+       title = "The distribution of average school performance in different subjects")+
+  theme_stata() +
+  theme(legend.position = "none")
+```
+
+::: callout-tip
+## Observations
+
+-   The above plot illustrates that the variances among all study subjects were relatively consistent.
+
+-   By comparing individual schools to the Singapore average, there is considerable variability in the performance levels among different schools in Singapore.
+
+-   There are noticeable outliers for each subject, suggesting that certain schools deviate significantly from the national average, either surpassing or falling below.
+:::
+
+#### **4.2.3 Socioeconomic status**
+
+Firstly, we will check the summary statistics and plot a histogram to understand the target variable "socioeconomic_status"
+
+::: panel-tabset
+## Summary Statistics
+
+```{r}
+#| code-fold: true
+summary(data_long$Socioeconomic_status)
+```
+
+## Distribution
 
 ```{r}
 #| code-fold: true
@@ -337,10 +427,9 @@ ggplot(data=data_long,
   geom_histogram(color="grey25",
                  fill="grey90")
 ```
+:::
 
-Given the abundance of data points, we will categorize them into four distinct groups before proceeding to create the visualization. They are: "*\< -2", "-2 - 0", "0 - 2", "\> 2".*
-
-This categorization aims to enhance clarity and facilitate a more focused and meaningful presentation of the information.
+Given the abundance of data points and the "socioeconomic_status" range (-3.5488 to 3.2780), we will categorize them into four distinct groups before proceeding to create the visualization. They are: "*\< -2", "-2 - 0", "0 - 2", "\> 2".* This categorization aims to enhance clarity and facilitate a more focused and meaningful presentation of the information.
 
 ::: panel-tabset
 ## Code
@@ -353,6 +442,7 @@ bins <- cut(data_long$Socioeconomic_status, breaks = breaks, labels = labels, in
 data_long <- data_long %>%
   mutate(Socioeconomic = bins)
 ```
+
 ## Preview
 
 ```{r}
@@ -365,8 +455,8 @@ head(data_long)
 #| code-fold: true
 ggplot(data_long, 
        aes(y = score, x= Socioeconomic, fill = Socioeconomic)) +
-  scale_fill_brewer(palette="Spectral")+
   geom_boxplot() +
+  scale_fill_brewer()+
   facet_wrap(~ subject) +
   labs(y = "Score", 
       title = "The relationship between the performances and socioeconomic status")+
@@ -377,13 +467,13 @@ ggplot(data_long,
 ::: callout-tip
 ## Observations
 
--   Students with higher socioeconomic score performed better across all three subjects.
+-   Students with higher socioeconomic score tend to have better performances across all three subjects.
 
--   There's not much difference on performaces for students with positive socioeconomic score, no matter above 2 or not.
+-   There's not much difference on performances for students with positive socioeconomic score, no matter above 2 or not.
 :::
 
 ## 5 Conclusion
 
 Through this exercise, we illustrated the utility of interactive and statistical plots in comprehending and analyzing PISA data.
 
-In Section 4, we employed diverse visualizations to delve into the data, unraveling its distribution, relationships, and patterns. We compared the distributions of the three different subjects - mathematics, reading, and science, and revealed that the shape of the scores in the three subjects seem very similar. Additionaly, our exploration also revealed correlations such as higher socioeconomic status score being linked to better performances across different subjects.
+In Section 4, we employed diverse visualizations to delve into the data, unraveling its distribution, relationships, and patterns. We compared the distributions of the three different subjects - mathematics, reading, and science, and revealed that the shape of the scores in the three subjects seem very similar. Additionally, our exploration also revealed correlations such as higher socioeconomic status score being linked to better performances across different subjects.
