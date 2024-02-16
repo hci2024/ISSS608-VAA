@@ -190,7 +190,8 @@ Code chunk below shows the second interactive feature of ggiraph, namely `data_i
 p <- ggplot(data=exam_data, 
        aes(x = MATHS)) +
   geom_dotplot_interactive(           
-    aes(data_id = CLASS),             
+    aes(data_id = CLASS,
+        tooltip = exam_data$ID),             
     stackgroups = TRUE,               
     binwidth = 1,                        
     method = "histodot") +               
