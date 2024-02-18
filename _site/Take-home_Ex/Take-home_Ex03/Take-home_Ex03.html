@@ -94,6 +94,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
+<script src="../../site_libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+<script src="../../site_libs/d3-bundle-5.16.0/d3-bundle.min.js"></script>
+<script src="../../site_libs/d3-lasso-0.0.5/d3-lasso.min.js"></script>
+<script src="../../site_libs/save-svg-as-png-1.4.17/save-svg-as-png.min.js"></script>
+<script src="../../site_libs/flatbush-4.0.0/flatbush.min.js"></script>
+<link href="../../site_libs/ggiraphjs-0.4.6/ggiraphjs.min.css" rel="stylesheet">
+<script src="../../site_libs/ggiraphjs-0.4.6/ggiraphjs.min.js"></script>
+<script src="../../site_libs/girafe-binding-0.8.8/girafe.js"></script>
 
 
 <link rel="stylesheet" href="../../styles.css">
@@ -268,11 +276,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#installing-and-loading-the-required-r-packages" id="toc-installing-and-loading-the-required-r-packages" class="nav-link" data-scroll-target="#installing-and-loading-the-required-r-packages">2.1 Installing and loading the required R packages</a></li>
   <li><a href="#importing-the-data" id="toc-importing-the-data" class="nav-link" data-scroll-target="#importing-the-data">2.2 Importing the data</a></li>
+  <li><a href="#variables-selection" id="toc-variables-selection" class="nav-link" data-scroll-target="#variables-selection">2.3 Variables Selection</a></li>
   </ul></li>
-  <li><a href="#data-wrangling" id="toc-data-wrangling" class="nav-link" data-scroll-target="#data-wrangling">3. Data Wrangling</a>
+  <li><a href="#data-visualisation-and-insights" id="toc-data-visualisation-and-insights" class="nav-link" data-scroll-target="#data-visualisation-and-insights">3. Data Visualisation and Insights</a>
   <ul class="collapse">
-  <li><a href="#variables-selection" id="toc-variables-selection" class="nav-link" data-scroll-target="#variables-selection">3.1 Variables Selection</a></li>
+  <li><a href="#visualizing-the-uncertainty-of-historical-temperature" id="toc-visualizing-the-uncertainty-of-historical-temperature" class="nav-link" data-scroll-target="#visualizing-the-uncertainty-of-historical-temperature">3.1 Visualizing the Uncertainty of Historical Temperature</a></li>
+  <li><a href="#visualizing-the-future-temperature-projection" id="toc-visualizing-the-future-temperature-projection" class="nav-link" data-scroll-target="#visualizing-the-future-temperature-projection">3.2 Visualizing the Future Temperature Projection</a></li>
   </ul></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">4. Conclusion</a></li>
   </ul>
 </nav>
     </div>
@@ -299,7 +310,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Modified</div>
     <div class="quarto-title-meta-contents">
-      <p class="date-modified">February 17, 2024</p>
+      <p class="date-modified">February 19, 2024</p>
     </div>
   </div>
     
@@ -311,7 +322,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="overview" class="level2">
 <h2 class="anchored" data-anchor-id="overview">1. Overview</h2>
 <p>The objective of this exercise is to create an analytics-driven data visualization to validate the claims that daily mean temperatures are projected to increase by 1.4 to 4.6. To achieve this, we will employ techniques of visual interactivity and uncertainty visualization.</p>
-<p><a href="historical daily temperature">The historical daily temperature datasets</a> were downloaded from <a href="http://www.weather.gov.sg/home/">Meteorological Service Singapore website</a>, consisting of daily mean temperatures recorded for January of the year 1983, 1993, 2003, 2013, and 2023 in weather station Changi.</p>
+<p><a href="historical daily temperature">The historical daily temperature datasets</a> were downloaded from <a href="http://www.weather.gov.sg/home/">Meteorological Service Singapore website</a>, consisting of daily mean temperatures recorded for January in the year 1983, 1993, 2003, 2013, and 2023 at the Changi weather station.</p>
 </section>
 <section id="getting-started" class="level2">
 <h2 class="anchored" data-anchor-id="getting-started">2. Getting Started</h2>
@@ -326,7 +337,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell" data-result="false">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(tidyverse, ggiraph, ggstatsplot)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(tidyverse, ggiraph, ggstatsplot, patchwork, plotly, DT, crosstalk)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 </section>
@@ -342,25 +353,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>data_1993 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/DAILYDATA_S24_199301.csv"</span>,<span class="at">locale=</span><span class="fu">locale</span>(<span class="at">encoding=</span><span class="st">"latin1"</span>))</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>data_2003 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/DAILYDATA_S24_200301.csv"</span>,<span class="at">locale=</span><span class="fu">locale</span>(<span class="at">encoding=</span><span class="st">"latin1"</span>))</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>data_2013 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/DAILYDATA_S24_201301.csv"</span>,<span class="at">locale=</span><span class="fu">locale</span>(<span class="at">encoding=</span><span class="st">"latin1"</span>))</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>data_2023 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/DAILYDATA_S24_202301.csv"</span>,<span class="at">locale=</span><span class="fu">locale</span>(<span class="at">encoding=</span><span class="st">"latin1"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>data_2023 <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/DAILYDATA_S24_202301.csv"</span>,<span class="at">locale=</span><span class="fu">locale</span>(<span class="at">encoding =</span> <span class="st">"UTF-8"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Next, we will merge the data and save the resulting object to an RDS file, which will then be loaded into the working environment.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>dataset <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(data_1983, data_1993, data_2003, data_2013, data_2023)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">write_rds</span>(dataset,<span class="st">"data/dataset.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>temp_data <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(data_1983, data_1993, data_2003, data_2013, data_2023)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">write_rds</span>(temp_data,<span class="st">"data/temp_data.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>dataset <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">"data/dataset.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>temp_data <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">"data/temp_data.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </div>
 <div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(dataset)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(temp_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 6 × 19
+<pre><code># A tibble: 6 × 16
   Station  Year Month   Day `Daily Rainfall Total (mm)` Highest 30 Min Rainfal…¹
   &lt;chr&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;                       &lt;dbl&gt; &lt;chr&gt;                   
 1 Changi   1983     1     1                         0.3 "\u0097"                
@@ -370,23 +381,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 5 Changi   1983     1     5                         0   "\u0097"                
 6 Changi   1983     1     6                         0   "\u0097"                
 # ℹ abbreviated name: ¹​`Highest 30 Min Rainfall (mm)`
-# ℹ 13 more variables: `Highest 60 Min Rainfall (mm)` &lt;chr&gt;,
+# ℹ 10 more variables: `Highest 60 Min Rainfall (mm)` &lt;chr&gt;,
 #   `Highest 120 Min Rainfall (mm)` &lt;chr&gt;, `Mean Temperature (°C)` &lt;dbl&gt;,
 #   `Maximum Temperature (°C)` &lt;dbl&gt;, `Minimum Temperature (°C)` &lt;dbl&gt;,
 #   `Mean Wind Speed (km/h)` &lt;dbl&gt;, `Max Wind Speed (km/h)` &lt;dbl&gt;,
 #   `Highest 30 min Rainfall (mm)` &lt;dbl&gt;, `Highest 60 min Rainfall (mm)` &lt;dbl&gt;,
-#   `Highest 120 min Rainfall (mm)` &lt;dbl&gt;, `Mean Temperature (Â°C)` &lt;dbl&gt;, …</code></pre>
+#   `Highest 120 min Rainfall (mm)` &lt;dbl&gt;</code></pre>
 </div>
 </div>
 </div>
 </div>
 </div>
 </section>
-</section>
-<section id="data-wrangling" class="level2">
-<h2 class="anchored" data-anchor-id="data-wrangling">3. Data Wrangling</h2>
 <section id="variables-selection" class="level3">
-<h3 class="anchored" data-anchor-id="variables-selection">3.1 Variables Selection</h3>
+<h3 class="anchored" data-anchor-id="variables-selection">2.3 Variables Selection</h3>
 <p>We will select our variables of interest from 13 variables and narrow them down to 6 variables. They are: <em>Year, Month, Day, Mean Temperature (°C), Maximum Temperature (°C), Minimum Temperature (°C)</em>. Subsequently, we will simplify the variable names for convenience.</p>
 <div class="tabset-margin-container"></div><div class="panel-tabset">
 <ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-2-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-1" role="tab" aria-controls="tabset-2-1" aria-selected="true">Code</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-2-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-2-2" role="tab" aria-controls="tabset-2-2" aria-selected="false">Preview</a></li></ul>
@@ -394,7 +402,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="tabset-2-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-2-1-tab">
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># select variables</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>subset <span class="ot">&lt;-</span> dataset <span class="sc">%&gt;%</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>subset <span class="ot">&lt;-</span> temp_data <span class="sc">%&gt;%</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="st">'Year'</span>,<span class="st">'Month'</span>,<span class="st">'Day'</span>,<span class="st">'Mean Temperature (°C)'</span>,<span class="st">'Maximum Temperature (°C)'</span>,</span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>         <span class="st">'Minimum Temperature (°C)'</span>)</span>
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
@@ -426,9 +434,222 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-
-
 </section>
+</section>
+<section id="data-visualisation-and-insights" class="level2">
+<h2 class="anchored" data-anchor-id="data-visualisation-and-insights">3. Data Visualisation and Insights</h2>
+<section id="visualizing-the-uncertainty-of-historical-temperature" class="level3">
+<h3 class="anchored" data-anchor-id="visualizing-the-uncertainty-of-historical-temperature">3.1 Visualizing the Uncertainty of Historical Temperature</h3>
+<p>A boxplot will be generated to visualize the distribution of historical daily mean temperature data for January of each year. Additionally, confidence intervals of the mean temperature by year will be also be plotted. This will establish a baseline for comparison with projected increases.</p>
+<p>Firstly, code chunk below will be used to derive the necessary summary statistics.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>my_sum <span class="ot">&lt;-</span> subset <span class="sc">%&gt;%</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(Year) <span class="sc">%&gt;%</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">n=</span><span class="fu">n</span>(),</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean=</span><span class="fu">mean</span>(Mean_temp),</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">sd=</span><span class="fu">sd</span>(Mean_temp)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">%&gt;%</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">se=</span>sd<span class="sc">/</span><span class="fu">sqrt</span>(n<span class="dv">-1</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Next, the code chunk below will be used to display my_sum tibble data frame in an html table format.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">head</span>(my_sum), <span class="at">format =</span> <span class="st">'html'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<table data-quarto-postprocess="true" class="table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: right;" data-quarto-table-cell-role="th">Year</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">n</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">mean</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">sd</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">se</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1983</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">26.45161</td>
+<td style="text-align: right;">0.6587215</td>
+<td style="text-align: right;">0.1202655</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1993</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">26.20645</td>
+<td style="text-align: right;">0.8390214</td>
+<td style="text-align: right;">0.1531837</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2003</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">26.66129</td>
+<td style="text-align: right;">0.8179965</td>
+<td style="text-align: right;">0.1493450</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2013</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">27.04516</td>
+<td style="text-align: right;">0.9804212</td>
+<td style="text-align: right;">0.1789996</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2023</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">26.53548</td>
+<td style="text-align: right;">1.2755517</td>
+<td style="text-align: right;">0.2328828</td>
+</tr>
+</tbody>
+</table>
+
+
+</div>
+</div>
+<p>Now we are ready to create the visualization.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(my_sum) <span class="sc">+</span> </span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>            <span class="fu">geom_errorbar_interactive</span>(<span class="fu">aes</span>(<span class="at">x=</span><span class="fu">factor</span>(Year),</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>                              <span class="at">ymin=</span>mean<span class="fl">-1.96</span><span class="sc">*</span>se, </span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>                              <span class="at">ymax=</span>mean<span class="fl">+1.96</span><span class="sc">*</span>se), </span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>                              <span class="at">data_id =</span> my_sum<span class="sc">$</span>Year,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>                              <span class="at">width=</span><span class="fl">0.2</span>, </span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>                              <span class="at">colour=</span><span class="st">"black"</span>, </span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>                              <span class="at">alpha=</span><span class="fl">0.9</span>, </span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>                              <span class="at">size=</span><span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">geom_point_interactive</span>(<span class="fu">aes</span>(<span class="at">x=</span><span class="fu">factor</span>(Year), </span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">y=</span>mean, </span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">data_id =</span> Year,</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">tooltip =</span> <span class="fu">paste</span>(<span class="st">"Year:"</span>, <span class="st">`</span><span class="at">Year</span><span class="st">`</span>, </span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>                                  <span class="st">"&lt;br&gt;Mean Temperature:"</span>, <span class="fu">round</span>(mean, <span class="at">digits =</span> <span class="dv">2</span>),</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>                                  <span class="st">"&lt;br&gt;95% CI:["</span>, </span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>                                  <span class="fu">round</span>((mean<span class="fl">-2.58</span><span class="sc">*</span>se), <span class="at">digits =</span> <span class="dv">2</span>), <span class="st">","</span>,</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>                                  <span class="fu">round</span>((mean<span class="fl">+2.58</span><span class="sc">*</span>se), <span class="at">digits =</span> <span class="dv">2</span>),<span class="st">"]"</span>)),</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>                     <span class="at">stat=</span><span class="st">"identity"</span>, </span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>                     <span class="at">color=</span><span class="st">"red"</span>, </span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>                     <span class="at">size =</span> <span class="fl">1.5</span>, </span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>                     <span class="at">alpha=</span><span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>             </span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">ylab</span>(<span class="st">"Mean Temperature (°C)"</span>) <span class="sc">+</span> </span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">coord_cartesian</span>(<span class="at">ylim =</span> <span class="fu">c</span>(<span class="fl">23.5</span>, <span class="fl">29.5</span>)) <span class="sc">+</span></span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">theme_minimal</span>() <span class="sc">+</span> </span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(</span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>                     <span class="at">angle =</span> <span class="dv">45</span>, <span class="at">vjust =</span> <span class="fl">0.5</span>, <span class="at">hjust=</span><span class="dv">1</span>),</span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a>                     <span class="at">axis.title.x =</span> <span class="fu">element_blank</span>()) <span class="sc">+</span></span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">ggtitle</span>(<span class="st">"95% Confidence Interval of Mean</span><span class="sc">\n</span><span class="st"> Temperature by Year"</span>)</span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(subset,</span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>             <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">factor</span>(Year), <span class="at">y =</span> Mean_temp)) <span class="sc">+</span></span>
+<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot_interactive</span>(</span>
+<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">tooltip =</span> <span class="fu">paste</span>(<span class="st">"Year: "</span>, Year,</span>
+<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>                        <span class="st">"&lt;br&gt;Median Temperature:"</span>, <span class="fu">round</span>(<span class="fu">median</span>(Mean_temp), <span class="at">digits =</span> <span class="dv">2</span>)),</span>
+<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>        <span class="at">data_id =</span> Year),</span>
+<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a>        <span class="at">fill =</span> <span class="st">"grey"</span>) <span class="sc">+</span></span>
+<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">ylim =</span> <span class="fu">c</span>(<span class="fl">23.5</span>, <span class="fl">29.5</span>)) <span class="sc">+</span></span>
+<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Daily Mean Temperature Distribution</span><span class="sc">\n</span><span class="st"> for January"</span>, <span class="at">x =</span> <span class="st">"Year"</span>) <span class="sc">+</span></span>
+<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a><span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">vjust =</span> <span class="fl">0.5</span>, <span class="at">hjust=</span><span class="dv">1</span>),</span>
+<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>  <span class="at">axis.title.x =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>  <span class="at">axis.title.y =</span> <span class="fu">element_blank</span>())</span>
+<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a><span class="fu">girafe</span>(                                  </span>
+<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a>  <span class="at">code =</span> <span class="fu">print</span>(p1 <span class="sc">+</span> p2),                             </span>
+<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>  <span class="at">width_svg =</span> <span class="dv">8</span>,                         </span>
+<span id="cb12-49"><a href="#cb12-49" aria-hidden="true" tabindex="-1"></a>  <span class="at">height_svg =</span> <span class="dv">8</span><span class="sc">*</span><span class="fl">0.618</span>,</span>
+<span id="cb12-50"><a href="#cb12-50" aria-hidden="true" tabindex="-1"></a>  <span class="at">options =</span> <span class="fu">list</span>(</span>
+<span id="cb12-51"><a href="#cb12-51" aria-hidden="true" tabindex="-1"></a>         <span class="fu">opts_hover</span>(<span class="at">css =</span> <span class="st">"stroke-width:1"</span>),</span>
+<span id="cb12-52"><a href="#cb12-52" aria-hidden="true" tabindex="-1"></a>         <span class="fu">opts_hover_inv</span>(<span class="at">css =</span> <span class="st">"opacity:0.2;"</span>)</span>
+<span id="cb12-53"><a href="#cb12-53" aria-hidden="true" tabindex="-1"></a>         ))     </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="girafe html-widget html-fill-item" id="htmlwidget-0834d95f6737a7190e7e" style="width:100%;height:464px;"></div>
+<script type="application/json" data-for="htmlwidget-0834d95f6737a7190e7e">{"x":{"html":"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='ggiraph-svg' role='img' id='svg_f95be717_1b30_454e_a5a0_06a70184913a' viewBox='0 0 576 355.97'>\n <defs id='svg_f95be717_1b30_454e_a5a0_06a70184913a_defs'>\n  <clipPath id='svg_f95be717_1b30_454e_a5a0_06a70184913a_c1'>\n   <rect x='0' y='0' width='576' height='355.97'/>\n  <\/clipPath>\n  <clipPath id='svg_f95be717_1b30_454e_a5a0_06a70184913a_c2'>\n   <rect x='38.62' y='42.91' width='526.42' height='277.55'/>\n  <\/clipPath>\n  <clipPath id='svg_f95be717_1b30_454e_a5a0_06a70184913a_c3'>\n   <rect x='5.48' y='5.48' width='288.99' height='345.01'/>\n  <\/clipPath>\n  <clipPath id='svg_f95be717_1b30_454e_a5a0_06a70184913a_c4'>\n   <rect x='38.62' y='42.91' width='250.37' height='277.55'/>\n  <\/clipPath>\n  <clipPath id='svg_f95be717_1b30_454e_a5a0_06a70184913a_c5'>\n   <rect x='294.47' y='5.48' width='276.05' height='345.01'/>\n  <\/clipPath>\n  <clipPath id='svg_f95be717_1b30_454e_a5a0_06a70184913a_c6'>\n   <rect x='314.67' y='42.91' width='250.37' height='277.55'/>\n  <\/clipPath>\n <\/defs>\n <g id='svg_f95be717_1b30_454e_a5a0_06a70184913a_rootg' class='ggiraph-svg-rootg'>\n  <g clip-path='url(#svg_f95be717_1b30_454e_a5a0_06a70184913a_c1)'>\n   <rect x='0' y='0' width='576' height='355.97' fill='#FFFFFF' fill-opacity='1' stroke='#FFFFFF' stroke-opacity='1' stroke-width='0.75' stroke-linejoin='round' stroke-linecap='round' class='ggiraph-svg-bg'/>\n   <rect x='0' y='0' width='576' height='355.97' fill='#FFFFFF' fill-opacity='1' stroke='#FFFFFF' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='round'/>\n  <\/g>\n  <g clip-path='url(#svg_f95be717_1b30_454e_a5a0_06a70184913a_c4)'>\n   <polyline points='38.62,244.77 288.99,244.77' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='0.53' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='38.62,160.66 288.99,160.66' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='0.53' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='38.62,76.56 288.99,76.56' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='0.53' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='38.62,286.82 288.99,286.82' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='38.62,202.72 288.99,202.72' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='38.62,118.61 288.99,118.61' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='67.51,320.47 67.51,42.91' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='115.65,320.47 115.65,42.91' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='163.80,320.47 163.80,42.91' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='211.95,320.47 211.95,42.91' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='260.10,320.47 260.10,42.91' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e1' points='62.69,173.81 72.32,173.81' fill='none' stroke='#000000' stroke-opacity='0.9' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='1983'/>\n   <polyline id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e2' points='67.51,173.81 67.51,193.64' fill='none' stroke='#000000' stroke-opacity='0.9' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='1983'/>\n   <polyline id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e3' points='62.69,193.64 72.32,193.64' fill='none' stroke='#000000' stroke-opacity='0.9' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='1983'/>\n   <polyline id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e4' points='110.84,181.41 120.47,181.41' fill='none' stroke='#000000' stroke-opacity='0.9' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='1993'/>\n   <polyline id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e5' points='115.65,181.41 115.65,206.66' fill='none' stroke='#000000' stroke-opacity='0.9' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='1993'/>\n   <polyline id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e6' points='110.84,206.66 120.47,206.66' fill='none' stroke='#000000' stroke-opacity='0.9' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='1993'/>\n   <polyline id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e7' points='158.99,162.60 168.62,162.60' fill='none' stroke='#000000' stroke-opacity='0.9' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='2003'/>\n   <polyline id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e8' points='163.80,162.60 163.80,187.22' fill='none' stroke='#000000' stroke-opacity='0.9' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='2003'/>\n   <polyline id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e9' points='158.99,187.22 168.62,187.22' fill='none' stroke='#000000' stroke-opacity='0.9' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='2003'/>\n   <polyline id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e10' points='207.14,144.01 216.77,144.01' fill='none' stroke='#000000' stroke-opacity='0.9' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='2013'/>\n   <polyline id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e11' points='211.95,144.01 211.95,173.52' fill='none' stroke='#000000' stroke-opacity='0.9' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='2013'/>\n   <polyline id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e12' points='207.14,173.52 216.77,173.52' fill='none' stroke='#000000' stroke-opacity='0.9' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='2013'/>\n   <polyline id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e13' points='255.28,161.00 264.91,161.00' fill='none' stroke='#000000' stroke-opacity='0.9' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='2023'/>\n   <polyline id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e14' points='260.10,161.00 260.10,199.39' fill='none' stroke='#000000' stroke-opacity='0.9' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='2023'/>\n   <polyline id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e15' points='255.28,199.39 264.91,199.39' fill='none' stroke='#000000' stroke-opacity='0.9' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='2023'/>\n   <circle id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e16' cx='67.51' cy='183.72' r='1.47pt' fill='#FF0000' fill-opacity='1' stroke='#FF0000' stroke-opacity='1' stroke-width='0.71' stroke-linejoin='round' stroke-linecap='round' data-id='1983' title='Year: 1983 &amp;lt;br&amp;gt;Mean Temperature: 26.45 &amp;lt;br&amp;gt;95% CI:[ 26.14 , 26.76 ]'/>\n   <circle id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e17' cx='115.65' cy='194.03' r='1.47pt' fill='#FF0000' fill-opacity='1' stroke='#FF0000' stroke-opacity='1' stroke-width='0.71' stroke-linejoin='round' stroke-linecap='round' data-id='1993' title='Year: 1993 &amp;lt;br&amp;gt;Mean Temperature: 26.21 &amp;lt;br&amp;gt;95% CI:[ 25.81 , 26.6 ]'/>\n   <circle id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e18' cx='163.8' cy='174.91' r='1.47pt' fill='#FF0000' fill-opacity='1' stroke='#FF0000' stroke-opacity='1' stroke-width='0.71' stroke-linejoin='round' stroke-linecap='round' data-id='2003' title='Year: 2003 &amp;lt;br&amp;gt;Mean Temperature: 26.66 &amp;lt;br&amp;gt;95% CI:[ 26.28 , 27.05 ]'/>\n   <circle id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e19' cx='211.95' cy='158.76' r='1.47pt' fill='#FF0000' fill-opacity='1' stroke='#FF0000' stroke-opacity='1' stroke-width='0.71' stroke-linejoin='round' stroke-linecap='round' data-id='2013' title='Year: 2013 &amp;lt;br&amp;gt;Mean Temperature: 27.05 &amp;lt;br&amp;gt;95% CI:[ 26.58 , 27.51 ]'/>\n   <circle id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e20' cx='260.1' cy='180.2' r='1.47pt' fill='#FF0000' fill-opacity='1' stroke='#FF0000' stroke-opacity='1' stroke-width='0.71' stroke-linejoin='round' stroke-linecap='round' data-id='2023' title='Year: 2023 &amp;lt;br&amp;gt;Mean Temperature: 26.54 &amp;lt;br&amp;gt;95% CI:[ 25.93 , 27.14 ]'/>\n  <\/g>\n  <g clip-path='url(#svg_f95be717_1b30_454e_a5a0_06a70184913a_c1)'>\n   <text x='23.89' y='289.97' font-size='6.6pt' font-family='Arial' fill='#4D4D4D' fill-opacity='1'>24<\/text>\n   <text x='23.89' y='205.87' font-size='6.6pt' font-family='Arial' fill='#4D4D4D' fill-opacity='1'>26<\/text>\n   <text x='23.89' y='121.76' font-size='6.6pt' font-family='Arial' fill='#4D4D4D' fill-opacity='1'>28<\/text>\n   <text transform='translate(55.89,351.28) rotate(-45.00)' font-size='6.6pt' font-family='Arial' fill='#4D4D4D' fill-opacity='1'>1983<\/text>\n   <text transform='translate(104.03,351.28) rotate(-45.00)' font-size='6.6pt' font-family='Arial' fill='#4D4D4D' fill-opacity='1'>1993<\/text>\n   <text transform='translate(152.18,351.28) rotate(-45.00)' font-size='6.6pt' font-family='Arial' fill='#4D4D4D' fill-opacity='1'>2003<\/text>\n   <text transform='translate(200.33,351.28) rotate(-45.00)' font-size='6.6pt' font-family='Arial' fill='#4D4D4D' fill-opacity='1'>2013<\/text>\n   <text transform='translate(248.48,351.28) rotate(-45.00)' font-size='6.6pt' font-family='Arial' fill='#4D4D4D' fill-opacity='1'>2023<\/text>\n   <text transform='translate(18.84,239.13) rotate(-90.00)' font-size='8.25pt' font-family='Arial'>Mean Temperature (°C)<\/text>\n   <text x='38.62' y='20.41' font-size='9.9pt' font-family='Arial'>95% Confidence Interval of Mean<\/text>\n   <text x='38.62' y='34.66' font-size='9.9pt' font-family='Arial'> Temperature by Year<\/text>\n  <\/g>\n  <g clip-path='url(#svg_f95be717_1b30_454e_a5a0_06a70184913a_c6)'>\n   <polyline points='314.67,244.77 565.04,244.77' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='0.53' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='314.67,160.66 565.04,160.66' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='0.53' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='314.67,76.56 565.04,76.56' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='0.53' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='314.67,286.82 565.04,286.82' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='314.67,202.72 565.04,202.72' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='314.67,118.61 565.04,118.61' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='343.56,320.47 343.56,42.91' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='391.71,320.47 391.71,42.91' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='439.86,320.47 439.86,42.91' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='488.00,320.47 488.00,42.91' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt'/>\n   <polyline points='536.15,320.47 536.15,42.91' fill='none' stroke='#EBEBEB' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt'/>\n   <line id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e21' x1='343.56' y1='160.66' x2='343.56' y2='143.84' stroke='#333333' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='1983' title='Year:  1983 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <line id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e22' x1='343.56' y1='215.33' x2='343.56' y2='223.74' stroke='#333333' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='1983' title='Year:  1983 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <polygon id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e23' points='325.50,160.66 325.50,215.33 361.61,215.33 361.61,160.66 325.50,160.66' fill='#BEBEBE' fill-opacity='1' stroke='#333333' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='miter' stroke-linecap='butt' data-id='1983' title='Year:  1983 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <line id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e24' x1='325.5' y1='181.69' x2='361.61' y2='181.69' stroke='#333333' stroke-opacity='1' stroke-width='2.13' stroke-linejoin='miter' stroke-linecap='butt' data-id='1983' title='Year:  1983 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <circle cx='391.71' cy='278.41' r='1.47pt' fill='#333333' fill-opacity='1' stroke='#333333' stroke-opacity='1' stroke-width='0.71' stroke-linejoin='round' stroke-linecap='round'/>\n   <circle cx='391.71' cy='299.44' r='1.47pt' fill='#333333' fill-opacity='1' stroke='#333333' stroke-opacity='1' stroke-width='0.71' stroke-linejoin='round' stroke-linecap='round'/>\n   <line id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e25' x1='391.71' y1='175.38' x2='391.71' y2='139.64' stroke='#333333' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='1993' title='Year:  1993 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <line id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e26' x1='391.71' y1='209.02' x2='391.71' y2='244.77' stroke='#333333' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='1993' title='Year:  1993 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <polygon id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e27' points='373.65,175.38 373.65,209.02 409.76,209.02 409.76,175.38 373.65,175.38' fill='#BEBEBE' fill-opacity='1' stroke='#333333' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='miter' stroke-linecap='butt' data-id='1993' title='Year:  1993 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <line id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e28' x1='373.65' y1='190.1' x2='409.76' y2='190.1' stroke='#333333' stroke-opacity='1' stroke-width='2.13' stroke-linejoin='miter' stroke-linecap='butt' data-id='1993' title='Year:  1993 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <circle cx='439.86' cy='261.59' r='1.47pt' fill='#333333' fill-opacity='1' stroke='#333333' stroke-opacity='1' stroke-width='0.71' stroke-linejoin='round' stroke-linecap='round'/>\n   <line id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e29' x1='439.86' y1='148.05' x2='439.86' y2='127.02' stroke='#333333' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='2003' title='Year:  2003 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <line id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e30' x1='439.86' y1='192.2' x2='439.86' y2='253.18' stroke='#333333' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='2003' title='Year:  2003 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <polygon id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e31' points='421.80,148.05 421.80,192.20 457.91,192.20 457.91,148.05 421.80,148.05' fill='#BEBEBE' fill-opacity='1' stroke='#333333' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='miter' stroke-linecap='butt' data-id='2003' title='Year:  2003 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <line id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e32' x1='421.8' y1='169.07' x2='457.91' y2='169.07' stroke='#333333' stroke-opacity='1' stroke-width='2.13' stroke-linejoin='miter' stroke-linecap='butt' data-id='2003' title='Year:  2003 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <circle cx='488' cy='72.35' r='1.47pt' fill='#333333' fill-opacity='1' stroke='#333333' stroke-opacity='1' stroke-width='0.71' stroke-linejoin='round' stroke-linecap='round'/>\n   <circle cx='488' cy='299.44' r='1.47pt' fill='#333333' fill-opacity='1' stroke='#333333' stroke-opacity='1' stroke-width='0.71' stroke-linejoin='round' stroke-linecap='round'/>\n   <circle cx='488' cy='270' r='1.47pt' fill='#333333' fill-opacity='1' stroke='#333333' stroke-opacity='1' stroke-width='0.71' stroke-linejoin='round' stroke-linecap='round'/>\n   <circle cx='488' cy='211.13' r='1.47pt' fill='#333333' fill-opacity='1' stroke='#333333' stroke-opacity='1' stroke-width='0.71' stroke-linejoin='round' stroke-linecap='round'/>\n   <line id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e33' x1='488' y1='139.64' x2='488' y2='127.02' stroke='#333333' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='2013' title='Year:  2013 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <line id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e34' x1='488' y1='164.87' x2='488' y2='190.1' stroke='#333333' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='2013' title='Year:  2013 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <polygon id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e35' points='469.95,139.64 469.95,164.87 506.06,164.87 506.06,139.64 469.95,139.64' fill='#BEBEBE' fill-opacity='1' stroke='#333333' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='miter' stroke-linecap='butt' data-id='2013' title='Year:  2013 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <line id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e36' x1='469.95' y1='148.05' x2='506.06' y2='148.05' stroke='#333333' stroke-opacity='1' stroke-width='2.13' stroke-linejoin='miter' stroke-linecap='butt' data-id='2013' title='Year:  2013 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <line id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e37' x1='536.15' y1='143.84' x2='536.15' y2='110.2' stroke='#333333' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='2023' title='Year:  2023 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <line id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e38' x1='536.15' y1='217.44' x2='536.15' y2='291.03' stroke='#333333' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='round' stroke-linecap='butt' data-id='2023' title='Year:  2023 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <polygon id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e39' points='518.10,143.84 518.10,217.44 554.21,217.44 554.21,143.84 518.10,143.84' fill='#BEBEBE' fill-opacity='1' stroke='#333333' stroke-opacity='1' stroke-width='1.07' stroke-linejoin='miter' stroke-linecap='butt' data-id='2023' title='Year:  2023 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n   <line id='svg_f95be717_1b30_454e_a5a0_06a70184913a_e40' x1='518.1' y1='152.25' x2='554.21' y2='152.25' stroke='#333333' stroke-opacity='1' stroke-width='2.13' stroke-linejoin='miter' stroke-linecap='butt' data-id='2023' title='Year:  2023 &amp;lt;br&amp;gt;Median Temperature: 26.9'/>\n  <\/g>\n  <g clip-path='url(#svg_f95be717_1b30_454e_a5a0_06a70184913a_c1)'>\n   <text x='299.95' y='289.97' font-size='6.6pt' font-family='Arial' fill='#4D4D4D' fill-opacity='1'>24<\/text>\n   <text x='299.95' y='205.87' font-size='6.6pt' font-family='Arial' fill='#4D4D4D' fill-opacity='1'>26<\/text>\n   <text x='299.95' y='121.76' font-size='6.6pt' font-family='Arial' fill='#4D4D4D' fill-opacity='1'>28<\/text>\n   <text transform='translate(331.94,351.28) rotate(-45.00)' font-size='6.6pt' font-family='Arial' fill='#4D4D4D' fill-opacity='1'>1983<\/text>\n   <text transform='translate(380.09,351.28) rotate(-45.00)' font-size='6.6pt' font-family='Arial' fill='#4D4D4D' fill-opacity='1'>1993<\/text>\n   <text transform='translate(428.24,351.28) rotate(-45.00)' font-size='6.6pt' font-family='Arial' fill='#4D4D4D' fill-opacity='1'>2003<\/text>\n   <text transform='translate(476.38,351.28) rotate(-45.00)' font-size='6.6pt' font-family='Arial' fill='#4D4D4D' fill-opacity='1'>2013<\/text>\n   <text transform='translate(524.53,351.28) rotate(-45.00)' font-size='6.6pt' font-family='Arial' fill='#4D4D4D' fill-opacity='1'>2023<\/text>\n   <text x='314.67' y='20.41' font-size='9.9pt' font-family='Arial'>Daily Mean Temperature Distribution<\/text>\n   <text x='314.67' y='34.66' font-size='9.9pt' font-family='Arial'> for January<\/text>\n  <\/g>\n <\/g>\n<\/svg>","js":null,"uid":"svg_f95be717_1b30_454e_a5a0_06a70184913a","ratio":1.618122977346278,"settings":{"tooltip":{"css":".tooltip_SVGID_ { padding:5px;background:black;color:white;border-radius:2px;text-align:left; ; position:absolute;pointer-events:none;z-index:999;}","placement":"doc","opacity":0.9,"offx":10,"offy":10,"use_cursor_pos":true,"use_fill":false,"use_stroke":false,"delay_over":200,"delay_out":500},"hover":{"css":".hover_data_SVGID_ { stroke-width:1 }","reactive":false,"nearest_distance":null},"hover_inv":{"css":".hover_inv_SVGID_ { opacity:0.2; }"},"hover_key":{"css":".hover_key_SVGID_ { fill:orange;stroke:black;cursor:pointer; }\ntext.hover_key_SVGID_ { stroke:none;fill:orange; }\ncircle.hover_key_SVGID_ { fill:orange;stroke:black; }\nline.hover_key_SVGID_, polyline.hover_key_SVGID_ { fill:none;stroke:orange; }\nrect.hover_key_SVGID_, polygon.hover_key_SVGID_, path.hover_key_SVGID_ { fill:orange;stroke:none; }\nimage.hover_key_SVGID_ { stroke:orange; }","reactive":true},"hover_theme":{"css":".hover_theme_SVGID_ { fill:orange;stroke:black;cursor:pointer; }\ntext.hover_theme_SVGID_ { stroke:none;fill:orange; }\ncircle.hover_theme_SVGID_ { fill:orange;stroke:black; }\nline.hover_theme_SVGID_, polyline.hover_theme_SVGID_ { fill:none;stroke:orange; }\nrect.hover_theme_SVGID_, polygon.hover_theme_SVGID_, path.hover_theme_SVGID_ { fill:orange;stroke:none; }\nimage.hover_theme_SVGID_ { stroke:orange; }","reactive":true},"select":{"css":".select_data_SVGID_ { fill:red;stroke:black;cursor:pointer; }\ntext.select_data_SVGID_ { stroke:none;fill:red; }\ncircle.select_data_SVGID_ { fill:red;stroke:black; }\nline.select_data_SVGID_, polyline.select_data_SVGID_ { fill:none;stroke:red; }\nrect.select_data_SVGID_, polygon.select_data_SVGID_, path.select_data_SVGID_ { fill:red;stroke:none; }\nimage.select_data_SVGID_ { stroke:red; }","type":"multiple","only_shiny":true,"selected":[]},"select_inv":{"css":""},"select_key":{"css":".select_key_SVGID_ { fill:red;stroke:black;cursor:pointer; }\ntext.select_key_SVGID_ { stroke:none;fill:red; }\ncircle.select_key_SVGID_ { fill:red;stroke:black; }\nline.select_key_SVGID_, polyline.select_key_SVGID_ { fill:none;stroke:red; }\nrect.select_key_SVGID_, polygon.select_key_SVGID_, path.select_key_SVGID_ { fill:red;stroke:none; }\nimage.select_key_SVGID_ { stroke:red; }","type":"single","only_shiny":true,"selected":[]},"select_theme":{"css":".select_theme_SVGID_ { fill:red;stroke:black;cursor:pointer; }\ntext.select_theme_SVGID_ { stroke:none;fill:red; }\ncircle.select_theme_SVGID_ { fill:red;stroke:black; }\nline.select_theme_SVGID_, polyline.select_theme_SVGID_ { fill:none;stroke:red; }\nrect.select_theme_SVGID_, polygon.select_theme_SVGID_, path.select_theme_SVGID_ { fill:red;stroke:none; }\nimage.select_theme_SVGID_ { stroke:red; }","type":"single","only_shiny":true,"selected":[]},"zoom":{"min":1,"max":1,"duration":300},"toolbar":{"position":"topright","pngname":"diagram","tooltips":null,"hidden":[],"delay_over":200,"delay_out":500},"sizing":{"rescale":true,"width":1}}},"evals":[],"jsHooks":[]}</script>
+</div>
+</div>
+</section>
+<section id="visualizing-the-future-temperature-projection" class="level3">
+<h3 class="anchored" data-anchor-id="visualizing-the-future-temperature-projection">3.2 Visualizing the Future Temperature Projection</h3>
+<p>A linear regression model will be used to analyze the trend and predict future temperatures.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">=</span> <span class="fu">lm</span>(mean <span class="sc">~</span> Year, my_sum)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Create results data frame</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>future_years <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">2033</span>, <span class="dv">2043</span>, <span class="dv">2053</span>, <span class="dv">2063</span>, <span class="dv">2073</span>, <span class="dv">2083</span>, <span class="dv">2093</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>predicted_temperatures <span class="ot">&lt;-</span> <span class="fu">predict</span>(model, <span class="fu">data.frame</span>(<span class="at">Year =</span> future_years), <span class="at">interval =</span> <span class="st">"confidence"</span>)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Forecast temperatures and store in results data frame</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>forecast <span class="ot">=</span> <span class="fu">cbind</span>(future_years, predicted_temperatures)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(forecast)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  future_years      fit      lwr      upr
+1         2033 26.88194 25.86279 27.90108
+2         2043 26.98258 25.67888 28.28628
+3         2053 27.08323 25.48653 28.67992
+4         2063 27.18387 25.28964 29.07810
+5         2073 27.28452 25.09007 29.47897
+6         2083 27.38516 24.88877 29.88155</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit linear regression model</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">lm</span>(mean <span class="sc">~</span> Year, my_sum)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Predict temperatures for future years</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>future_years <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">2033</span>,</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>                               <span class="dv">2043</span>,</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>                               <span class="dv">2053</span>,</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>                               <span class="dv">2063</span>,</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>                               <span class="dv">2073</span>,</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>                               <span class="dv">2083</span>,</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>                               <span class="dv">2093</span>)</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>predicted_temperatures <span class="ot">&lt;-</span> <span class="fu">predict</span>(model, <span class="at">newdata =</span> <span class="fu">data.frame</span>(<span class="at">Year =</span> future_years))</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine historical and predicted data</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>all_years <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">as.numeric</span>(my_sum<span class="sc">$</span>Year), future_years)</span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>all_temperatures <span class="ot">&lt;-</span> <span class="fu">c</span>(my_sum<span class="sc">$</span>mean, predicted_temperatures)</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>all_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Year =</span> all_years, <span class="at">mean =</span> all_temperatures)</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot historical data and predicted temperatures</span></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(all_data, <span class="fu">aes</span>(<span class="at">x =</span> Year, <span class="at">y =</span> mean)) <span class="sc">+</span></span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a><span class="fu">geom_point_interactive</span>(</span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>) <span class="sc">+</span>  <span class="co"># Scatter plot</span></span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>) <span class="sc">+</span> </span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Historical and Predicted Mean Temperatures"</span>,</span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Year"</span>,</span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Mean Temperature (Celsius)"</span>) <span class="sc">+</span></span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex03_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Insights
+</div>
+</div>
+<div class="callout-body-container callout-body">
+
+</div>
+</div>
+</section>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">4. Conclusion</h2>
+
+
 </section>
 
 </main> <!-- /main -->

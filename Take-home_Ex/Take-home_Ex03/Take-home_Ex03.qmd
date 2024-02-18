@@ -13,7 +13,7 @@ editor: visual
 
 The objective of this exercise is to create an analytics-driven data visualization to validate the claims that daily mean temperatures are projected to increase by 1.4 to 4.6. To achieve this, we will employ techniques of visual interactivity and uncertainty visualization.
 
-[The historical daily temperature datasets](historical%20daily%20temperature) were downloaded from [Meteorological Service Singapore website](http://www.weather.gov.sg/home/), consisting of daily mean temperatures recorded for January of the year 1983, 1993, 2003, 2013, and 2023 in weather station Changi.
+[The historical daily temperature datasets](historical%20daily%20temperature) were downloaded from [Meteorological Service Singapore website](http://www.weather.gov.sg/home/), consisting of daily mean temperatures recorded for January in the year 1983, 1993, 2003, 2013, and 2023 at the Changi weather station.
 
 ## 2. Getting Started
 
@@ -30,7 +30,7 @@ In this exercise, we use p_load() of pacman package to load required R packages.
 ```{r}
 #| code-fold: true
 #| result: false
-pacman::p_load(tidyverse, ggiraph, ggstatsplot)
+pacman::p_load(tidyverse, ggiraph, ggstatsplot, patchwork, plotly, DT, crosstalk)
 ```
 
 ### 2.2 Importing the data
@@ -46,32 +46,30 @@ data_1983 <- read_csv("data/DAILYDATA_S24_198301.csv",locale=locale(encoding="la
 data_1993 <- read_csv("data/DAILYDATA_S24_199301.csv",locale=locale(encoding="latin1"))
 data_2003 <- read_csv("data/DAILYDATA_S24_200301.csv",locale=locale(encoding="latin1"))
 data_2013 <- read_csv("data/DAILYDATA_S24_201301.csv",locale=locale(encoding="latin1"))
-data_2023 <- read_csv("data/DAILYDATA_S24_202301.csv",locale=locale(encoding="latin1"))
+data_2023 <- read_csv("data/DAILYDATA_S24_202301.csv",locale=locale(encoding = "UTF-8"))
 ```
 
 Next, we will merge the data and save the resulting object to an RDS file, which will then be loaded into the working environment.
 
 ```{r}
 #| eval: false
-dataset <- bind_rows(data_1983, data_1993, data_2003, data_2013, data_2023)
-write_rds(dataset,"data/dataset.rds")
+temp_data <- bind_rows(data_1983, data_1993, data_2003, data_2013, data_2023)
+write_rds(temp_data,"data/temp_data.rds")
 ```
 
 ```{r}
-dataset <- read_rds("data/dataset.rds")
+temp_data <- read_rds("data/temp_data.rds")
 ```
 
 ## Preview
 
 ```{r}
 #| code-fold: true
-head(dataset)
+head(temp_data)
 ```
 :::
 
-## 3. Data Wrangling
-
-### 3.1 Variables Selection
+### 2.3 Variables Selection
 
 We will select our variables of interest from 13 variables and narrow them down to 6 variables. They are: *Year, Month, Day, Mean Temperature (°C), Maximum Temperature (°C), Minimum Temperature (°C)*. Subsequently, we will simplify the variable names for convenience.
 
@@ -80,7 +78,7 @@ We will select our variables of interest from 13 variables and narrow them down 
 
 ```{r}
 # select variables
-subset <- dataset %>%
+subset <- temp_data %>%
   select('Year','Month','Day','Mean Temperature (°C)','Maximum Temperature (°C)',
          'Minimum Temperature (°C)')
 
@@ -98,3 +96,145 @@ subset <- subset %>%
 head(subset)
 ```
 :::
+
+## 3. Data Visualisation and Insights
+
+### 3.1 Visualizing the Uncertainty of Historical Temperature
+
+A boxplot will be generated to visualize the distribution of historical daily mean temperature data for January of each year. Additionally, confidence intervals of the mean temperature by year will be also be plotted. This will establish a baseline for comparison with projected increases.
+
+Firstly, code chunk below will be used to derive the necessary summary statistics.
+
+```{r}
+my_sum <- subset %>%
+  group_by(Year) %>%
+  summarise(
+    n=n(),
+    mean=mean(Mean_temp),
+    sd=sd(Mean_temp)
+    ) %>%
+  mutate(se=sd/sqrt(n-1))
+```
+
+Next, the code chunk below will be used to display my_sum tibble data frame in an html table format.
+
+```{r}
+knitr::kable(head(my_sum), format = 'html')
+```
+
+Now we are ready to create the visualization.
+
+```{r}
+#| code-fold: true
+p1 <- ggplot(my_sum) + 
+            geom_errorbar_interactive(aes(x=factor(Year),
+                              ymin=mean-1.96*se, 
+                              ymax=mean+1.96*se), 
+                              data_id = my_sum$Year,
+                              width=0.2, 
+                              colour="black", 
+                              alpha=0.9, 
+                              size=0.5) +
+                   geom_point_interactive(aes(x=factor(Year), 
+                                  y=mean, 
+                                  data_id = Year,
+                                  tooltip = paste("Year:", `Year`, 
+                                  "<br>Mean Temperature:", round(mean, digits = 2),
+                                  "<br>95% CI:[", 
+                                  round((mean-2.58*se), digits = 2), ",",
+                                  round((mean+2.58*se), digits = 2),"]")),
+                     stat="identity", 
+                     color="red", 
+                     size = 1.5, 
+                     alpha=1) + 
+             
+                   ylab("Mean Temperature (°C)") + 
+                  coord_cartesian(ylim = c(23.5, 29.5)) +
+                   theme_minimal() + 
+                   theme(axis.text.x = element_text(
+                     angle = 45, vjust = 0.5, hjust=1),
+                     axis.title.x = element_blank()) +
+                   ggtitle("95% Confidence Interval of Mean\n Temperature by Year")
+
+p2 <- ggplot(subset,
+             aes(x = factor(Year), y = Mean_temp)) +
+  geom_boxplot_interactive(
+    aes(tooltip = paste("Year: ", Year,
+                        "<br>Median Temperature:", round(median(Mean_temp), digits = 2)),
+        data_id = Year),
+        fill = "grey") +
+  coord_cartesian(ylim = c(23.5, 29.5)) +
+    labs(title = "Daily Mean Temperature Distribution\n for January", x = "Year") +
+  theme_minimal() +
+theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1),
+  axis.title.x = element_blank(),
+  axis.title.y = element_blank())
+
+
+girafe(                                  
+  code = print(p1 + p2),                             
+  width_svg = 8,                         
+  height_svg = 8*0.618,
+  options = list(
+         opts_hover(css = "stroke-width:1"),
+         opts_hover_inv(css = "opacity:0.2;")
+         ))     
+```
+
+### 3.2 Visualizing the Future Temperature Projection
+
+A linear regression model will be used to analyze the trend and predict future temperatures.
+
+```{r}
+model = lm(mean ~ Year, my_sum)
+
+# Create results data frame
+future_years <- c(2033, 2043, 2053, 2063, 2073, 2083, 2093)
+
+predicted_temperatures <- predict(model, data.frame(Year = future_years), interval = "confidence")
+# Forecast temperatures and store in results data frame
+forecast = cbind(future_years, predicted_temperatures)
+head(forecast)
+```
+
+```{r}
+
+
+# Fit linear regression model
+model <- lm(mean ~ Year, my_sum)
+
+# Predict temperatures for future years
+future_years <- c(2033,
+                               2043,
+                               2053,
+                               2063,
+                               2073,
+                               2083,
+                               2093)
+predicted_temperatures <- predict(model, newdata = data.frame(Year = future_years))
+
+# Combine historical and predicted data
+all_years <- c(as.numeric(my_sum$Year), future_years)
+all_temperatures <- c(my_sum$mean, predicted_temperatures)
+all_data <- data.frame(Year = all_years, mean = all_temperatures)
+
+# Plot historical data and predicted temperatures
+library(ggplot2)
+
+ggplot(all_data, aes(x = Year, y = mean)) +
+geom_point_interactive(
+  
+) +  # Scatter plot
+  geom_smooth(method = "lm") + 
+  
+  labs(title = "Historical and Predicted Mean Temperatures",
+       x = "Year",
+       y = "Mean Temperature (Celsius)") +
+  theme_minimal()
+```
+
+::: callout-tip
+## Insights
+:::
+
+## 4. Conclusion
