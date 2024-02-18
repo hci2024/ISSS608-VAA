@@ -186,6 +186,8 @@ girafe(
 A linear regression model will be used to analyze the trend and predict future temperatures.
 
 ```{r}
+#| eval: false
+#| echo: false
 model = lm(mean ~ Year, my_sum)
 
 # Create results data frame
@@ -204,17 +206,11 @@ head(forecast)
 model <- lm(mean ~ Year, my_sum)
 
 # Predict temperatures for future years
-future_years <- c(2033,
-                               2043,
-                               2053,
-                               2063,
-                               2073,
-                               2083,
-                               2093)
+future_years <- c(2033, 2043, 2053, 2063, 2073, 2083, 2093)
 predicted_temperatures <- predict(model, newdata = data.frame(Year = future_years))
 
 # Combine historical and predicted data
-all_years <- c(as.numeric(my_sum$Year), future_years)
+all_years <- c(my_sum$Year, future_years)
 all_temperatures <- c(my_sum$mean, predicted_temperatures)
 all_data <- data.frame(Year = all_years, mean = all_temperatures)
 
@@ -229,7 +225,7 @@ geom_point_interactive(
   
   labs(title = "Historical and Predicted Mean Temperatures",
        x = "Year",
-       y = "Mean Temperature (Celsius)") +
+       y = "Mean Temperature (°C)") +
   theme_minimal()
 ```
 
