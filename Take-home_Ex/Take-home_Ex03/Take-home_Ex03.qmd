@@ -21,16 +21,18 @@ The objective of this exercise is to create an analytics-driven data visualizati
 
 In this exercise, we use p_load() of pacman package to load required R packages. The packages that will be used are:
 
--   *tidyverse*
+-   *tidyverse* a family of R packages for data science process,
 
--   *ggstatsplot*
+-   *ggstatsplot* package to create visual graphics with rich statistical information,
 
--   *ggiraph*
+-   *ggiraph* for making ‘ggplot’ graphics interactive,
+
+-   *patchwork* for combining multiple ggplot2 graphs into one figure.
 
 ```{r}
 #| code-fold: true
 #| result: false
-pacman::p_load(tidyverse, ggiraph, ggstatsplot, patchwork, plotly, DT, crosstalk)
+pacman::p_load(tidyverse, ggiraph, ggstatsplot, patchwork)
 ```
 
 ### 2.2 Importing the data
@@ -186,14 +188,15 @@ girafe(
 First, a linear regression model will be used to analyze the trend and predict future temperatures.
 
 ::: panel-tabset
+## Code
 
-## Code 
 ```{r}
 # Fit linear regression model
 model <- lm(mean ~ Year, my_sum)
 ```
 
 ## Summary
+
 ```{r}
 #| code-fold: true
 summary(model)
