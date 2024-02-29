@@ -1,0 +1,22 @@
+---
+title: "In-Class Exercise 3"
+date: "January 27, 2024"
+date-modified: "last-modified"
+execute: 
+  eval: true
+  echo: true
+  warning: false
+editor: visual
+---
+
+Superstore Sales and Profit Report
+
+<https://public.tableau.com/app/profile/hui.ci5829/viz/In-class_Ex03-SuperstoreSalesandProfitReport_17063378291410/Dashboard1?publish=yes>
+
+Superstore Sales and Profit Story
+
+<https://public.tableau.com/app/profile/hui.ci5829/viz/In-class_Ex03-SuperstoreSalesandProfitStory_17063378781000/SuperstoreSalesandProfitStory?publish=yes>
+
+Scatterplot: Maths vs English
+
+<https://public.tableau.com/app/profile/hui.ci5829/viz/In-class_Ex03-ScatterplotMathsvsEnglish/Dashboard1?publish=yes>

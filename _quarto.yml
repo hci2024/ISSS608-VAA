@@ -40,13 +40,11 @@ website:
           - text: "In-class Exercise 1"
             href: "In-class_Ex/In-class_Ex01/In-class_Ex01.html"
           - text: "In-class Exercise 2"
-            href: "In-class_Ex/In-class_Ex02/In-class_Ex02.html"
+            href: https://public.tableau.com/app/profile/hui.ci5829/viz/In-class_Ex02_17091325564850/MonthlySalesandProfitbyRegion2016-2019
           - text: "In-class Exercise 3"
             href: "In-class_Ex/In-class_Ex03/In-class_Ex03.html"
-          - text: "In-class Exercise 4"
-            href: "In-class_Ex/In-class_Ex04/In-class_Ex04.html"
           - text: "In-class Exercise 5"
-            href: "In-class_Ex/In-class_Ex05/In-class_Ex05.html"
+            href: https://hci2024.shinyapps.io/prototype1/
           - text: "In-class Exercise 6"
             href: "In-class_Ex/In-class_Ex06/In-class_Ex06.html"
           - text: "In-class Exercise 7"

@@ -1,7 +1,7 @@
 ---
 title: "Take-home Exercise 3: Be Weatherwise or Otherwise"
 date: "February 14, 2024"
-date-modified: "last-modified"
+date-modified: "February 18, 2024"
 execute:
   eval: true
   echo: true
@@ -97,7 +97,7 @@ head(subset)
 ```
 :::
 
-## 3. Data Visualisation and Insights
+## 3. Data Visualisation
 
 ### 3.1 Visualizing the Uncertainty of Historical Temperature
 
@@ -141,8 +141,8 @@ p1 <- ggplot(my_sum) +
                                   tooltip = paste("Year:", `Year`, 
                                   "<br>Mean Temperature:", round(mean, digits = 2),
                                   "<br>95% CI:[", 
-                                  round((mean-2.58*se), digits = 2), ",",
-                                  round((mean+2.58*se), digits = 2),"]")),
+                                  round((mean-1.96*se), digits = 2), ",",
+                                  round((mean+1.96*se), digits = 2),"]")),
                      stat="identity", 
                      color="red", 
                      size = 1.5, 
@@ -183,54 +183,81 @@ girafe(
 
 ### 3.2 Visualizing the Future Temperature Projection
 
-A linear regression model will be used to analyze the trend and predict future temperatures.
+First, a linear regression model will be used to analyze the trend and predict future temperatures.
 
+::: panel-tabset
+
+## Code 
 ```{r}
-#| eval: false
-#| echo: false
-model = lm(mean ~ Year, my_sum)
-
-# Create results data frame
-future_years <- c(2033, 2043, 2053, 2063, 2073, 2083, 2093)
-
-predicted_temperatures <- predict(model, data.frame(Year = future_years), interval = "confidence")
-# Forecast temperatures and store in results data frame
-forecast = cbind(future_years, predicted_temperatures)
-head(forecast)
-```
-
-```{r}
-
-
 # Fit linear regression model
 model <- lm(mean ~ Year, my_sum)
+```
 
+## Summary
+```{r}
+#| code-fold: true
+summary(model)
+```
+:::
+
+Next, we will predict the temperatures with 95% confidence interval for future 10 years, and combine the predicted data with the historical data.
+
+```{r}
+#| code-fold: true
 # Predict temperatures for future years
-future_years <- c(2033, 2043, 2053, 2063, 2073, 2083, 2093)
-predicted_temperatures <- predict(model, newdata = data.frame(Year = future_years))
+future_years <- c(2033, 2043, 2053, 2063, 2073, 2083, 2093, 2103, 2113, 2123)
+predicted_temperatures <- predict(model, newdata = data.frame(Year = future_years),interval = "confidence")
 
 # Combine historical and predicted data
+hist_temperatures <- cbind(my_sum$mean, my_sum$mean-1.96*my_sum$se, my_sum$mean+1.96*my_sum$se )
 all_years <- c(my_sum$Year, future_years)
-all_temperatures <- c(my_sum$mean, predicted_temperatures)
-all_data <- data.frame(Year = all_years, mean = all_temperatures)
+all_temperatures <- rbind(hist_temperatures, predicted_temperatures)
+all_data <- data.frame(Year = all_years, all_temperatures)
 
-# Plot historical data and predicted temperatures
-library(ggplot2)
+knitr::kable(all_data,row.names = FALSE, format = 'html')
 
-ggplot(all_data, aes(x = Year, y = mean)) +
-geom_point_interactive(
-  
-) +  # Scatter plot
-  geom_smooth(method = "lm") + 
-  
+```
+
+Now we are ready to create the visualization.
+
+```{r}
+#| code-fold: true
+p<-ggplot(all_data, aes(x = Year, y = fit)) +
+  geom_errorbar(
+    aes(ymin=lwr, 
+        ymax=upr), 
+    width=0.2, 
+    colour="black", 
+    alpha=0.9, 
+    size=0.5) +
+  geom_point_interactive(aes(y=all_data$fit), 
+           tooltip = paste("Year:", all_data$Year, 
+                           "<br>Mean Temperature:", round(all_data$fit, digits = 2),
+                           "<br>95% CI:[", 
+                            round(all_data$lwr, digits = 2), ",",
+                            round(all_data$upr, digits = 2),"]"),
+           stat="identity", 
+           color="red",
+           size = 1.5,
+           alpha=1) +
+  geom_smooth(method = "lm", se=FALSE) + 
   labs(title = "Historical and Predicted Mean Temperatures",
        x = "Year",
        y = "Mean Temperature (°C)") +
   theme_minimal()
+
+girafe(                                
+  ggobj = p,                       
+  width_svg = 8,                         
+  height_svg = 8*0.618,
+  options = list(
+         opts_hover(css = "stroke-width:1"),
+         opts_hover_inv(css = "opacity:0.2;")
+         )) 
 ```
 
-::: callout-tip
-## Insights
-:::
-
 ## 4. Conclusion
+
+The data presented in the above plots clearly demonstrate a consistent increase in temperature over the past five decades. The upward trend of mean temperatures for January is evident, showing a rise from 26.45°C in 1983 to 27.05°C in 2013, indicating an average annual increase of approximately 0.15°C.
+
+Drawing from this observed pattern, predictive models project that by 2123, the monthly mean temperature is anticipated to reach 27.79°C, with an upper boundary of 31.5°C. This suggests a projected temperature escalation of roughly 1.25°C to 4.51°C over the next decade, slightly below the previously claimed range of 1.4°C to 4.6°C.
