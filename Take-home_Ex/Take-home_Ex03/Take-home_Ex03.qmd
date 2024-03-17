@@ -13,7 +13,7 @@ editor: visual
 
 The objective of this exercise is to create an analytics-driven data visualization to validate the claims that daily mean temperatures are projected to increase by 1.4 to 4.6. To achieve this, we will employ techniques of visual interactivity and uncertainty visualization.
 
-[The historical daily temperature datasets](historical%20daily%20temperature) were downloaded from [Meteorological Service Singapore website](http://www.weather.gov.sg/home/), consisting of daily mean temperatures recorded for January in the year 1983, 1993, 2003, 2013, and 2023 at the Changi weather station.
+[The historical daily temperature datasets](http://www.weather.gov.sg/climate-historical-daily/) were downloaded from [Meteorological Service Singapore website](http://www.weather.gov.sg/home/), consisting of daily mean temperatures recorded for January in the year 1983, 1993, 2003, 2013, and 2023 at the Changi weather station.
 
 ## 2. Getting Started
 

@@ -1,0 +1,243 @@
+---
+title: "Take-home Exercise 4: Exploratory Data Analysis for Visual Analytics Shiny Application"
+date: "March 6, 2024"
+date-modified: "last-modified"
+execute:
+  eval: true
+  echo: true
+  warning: false
+editor: visual
+---
+
+## 1. Installing and launching the required R packages
+
+```{r}
+pacman::p_load(tidyverse, ggiraph, ggstatsplot, patchwork, ggthemes, sf, terra, gstat, automap, tmap, viridis)
+
+```
+
+## 2. Importing the data
+
+The datasets to be used can be obtained from [Meteorological Service Singapore](http://www.weather.gov.sg/home/).
+
+```{r}
+climate_data <- read_csv("data/clean_climate_data.csv")
+```
+
+## 3. Understanding the weather data over time
+
+The user will be able to select weather station and measurement variable (*mean_temp, daily_rainfall, mean_wind*).
+
+Inputs for prototyping:
+
+```{r}
+input_station <- "Changi"
+input_msmt <- "mean_temp"
+```
+
+Next, the code chunk below will filter the selected weather station and measurement variable, to prepare the input data.
+
+```{r}
+input_data <- climate_data %>%
+  select('Station','Year','Month','Day',input_msmt)%>%
+  filter(Station == input_station)
+```
+
+### 3.1 Distribution of Weather Data Over the Years
+
+```{r}
+ggplot(input_data,
+             aes(x = factor(Year), y = !!rlang::sym(input_msmt))) +
+  geom_boxplot(fill = "grey") +
+  coord_cartesian(ylim = c(23.5, 29.5)) +
+    labs(title = paste0(input_msmt, " Distribution at ", input_station), x = "Year") +
+  theme_minimal() +
+theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1),
+  axis.title.x = element_blank(),
+  axis.title.y = element_blank())
+```
+
+### 3.2 Cycle Plot of Weather Data Over the Years
+
+Aggregating the input measurement variable by Year and Month:
+
+```{r}
+input_data_month <- aggregate(as.formula(paste(input_msmt, "~ Year + Month")), 
+                              data = climate_data, 
+                              FUN = mean)
+```
+
+Computing the monthly average of the input measurement variable over the years:
+
+```{r}
+hline.data <- input_data_month %>% 
+  group_by(Month) %>%
+  summarise(avgvalue = mean(!!rlang::sym(input_msmt)))
+```
+
+Plotting the cycle plot:
+
+```{r}
+ggplot() + 
+  geom_line(data=input_data_month,
+            aes(x=Year, 
+                y=!!rlang::sym(input_msmt), 
+                group=Month), 
+            colour="black") +
+  geom_hline(aes(yintercept=avgvalue), 
+             data=hline.data, 
+             linetype=6, 
+             colour="red", 
+             size=0.5) + 
+  facet_grid(~Month) +
+  labs(axis.text.x = element_blank(),
+       title = paste0("Monthly ", input_msmt, " Over the Years at ", input_station)) +
+  xlab("") +
+  ylab(input_msmt) +
+  theme_tufte(base_family = "Helvetica")+
+  theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust=0.5))
+```
+
+### 3.3 UI Design
+
+![](images/clipboard-193852871.png)
+
+## 4. Geographical analysis of weather data by region
+
+Importing the station data:
+
+```{r}
+stations <- read_csv("data/aspatial/RainfallStation.csv")
+```
+
+The user will be able to select the year, measurement variable (*mean_temp, daily_rainfall, mean_wind*), and the way to aggregate.
+
+Inputs for prototyping:
+
+```{r}
+input_year <- 2023
+input_msmt <- "daily_rainfall"
+input_agg <- "sum"
+```
+
+Preparing the input data:
+
+```{r}
+input_data <- climate_data %>%
+  select('Station','Year','Month','Day',input_msmt)%>%
+  filter(Year == input_year)
+
+rfdata <- input_data%>%
+  select(c(1,5))%>%
+  group_by(Station)%>%
+  summarise(year_sum = sum(!!rlang::sym(input_msmt)))%>%
+  mutate(
+    year_sum = ifelse(is.na(year_sum), 0, year_sum),
+  )%>%
+  ungroup()
+```
+
+Converting aspatial data into geospatial data:
+
+```{r}
+rfdata <- rfdata %>%
+  left_join(stations)
+
+rfdata_sf<- st_as_sf(rfdata,
+                     coords = c("Longitude", "Latitude"),
+                     crs = 4326)%>%
+  st_transform(crs = 3414)
+```
+
+Importing planning subzone boundary data:
+
+```{r}
+mpsz2019 <- st_read(dsn = "data/geospatial", layer = "MPSZ-2019")%>%
+  st_transform(crs = 3414)
+```
+
+### 4.1 Quantitative Dot Map of Rainfall Distribution by Stations
+
+```{r}
+tmap_options(check.and.fix = TRUE)
+tmap_mode("view")
+tm_shape(mpsz2019)+
+  tm_borders()+
+tm_shape(rfdata_sf)+
+  tm_dots(col = 'year_sum')
+tmap_mode("plot")
+```
+
+### 4.2 Spatial Interpolation
+
+```{r}
+grid <- terra::rast(mpsz2019, 
+                    nrows = 690, 
+                    ncols = 1075)
+
+xy <- terra::xyFromCell(grid, 
+                        1:ncell(grid))
+
+coop <- st_as_sf(as.data.frame(xy), 
+                 coords = c("x", "y"),
+                 crs = st_crs(mpsz2019))
+coop <- st_filter(coop, mpsz2019)
+
+res <- gstat(formula = year_sum ~ 1, 
+             locations = rfdata_sf, 
+             nmax = 5,
+             set = list(idp = 0))
+
+resp <- predict(res, coop)
+
+resp$x <- st_coordinates(resp)[,1]
+resp$y <- st_coordinates(resp)[,2]
+resp$pred <- resp$var1.pred
+
+pred <- terra::rasterize(resp, grid, 
+                         field = "pred", 
+                         fun = "mean")
+```
+
+```{r}
+tmap_options(check.and.fix = TRUE)
+tmap_mode("plot")
+tm_shape(pred) + 
+  tm_raster(alpha = 0.6, 
+            palette = "viridis")
+```
+
+### 4.3 UI Design
+
+![](images/clipboard-2010398625.png)
+
+## 5. Correlation analysis
+
+The user will be able to select the variables for coorelatioin analysis.
+
+Inputs for prototyping:
+
+```{r}
+input1 <- "mean_temp"
+input2 <- "daily_rainfall"
+input3 <- "mean_wind"
+```
+
+Preparing the input data:
+
+```{r}
+cor_data <- climate_data %>%
+  select('Year','Month','Day',input1, input2, input3)
+```
+
+The result:
+
+```{r}
+ggstatsplot::ggcorrmat(
+  data = cor_data, 
+  cor.vars = 4:6)
+```
+
+### UI Design
+
+![](images/clipboard-139021012.png)
