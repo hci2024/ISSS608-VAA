@@ -13,7 +13,6 @@ editor: visual
 
 ```{r}
 pacman::p_load(tidyverse, ggiraph, ggstatsplot, patchwork, ggthemes, sf, terra, gstat, automap, tmap, viridis)
-
 ```
 
 ## 2. Importing the data
@@ -40,7 +39,8 @@ Next, the code chunk below will filter the selected weather station and measurem
 ```{r}
 input_data <- climate_data %>%
   select('Station','Year','Month','Day',input_msmt)%>%
-  filter(Station == input_station)
+  filter(Station == input_station,
+         Year %in% c(2018, 2019, 2021))
 ```
 
 ### 3.1 Distribution of Weather Data Over the Years
@@ -56,6 +56,21 @@ theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1),
   axis.title.x = element_blank(),
   axis.title.y = element_blank())
 ```
+
+```{r}
+ggbetweenstats(
+  data = input_data,
+  x = Year, 
+  y = !!rlang::sym(input_msmt),
+  type = "p",
+  mean.ci = TRUE, 
+  pairwise.comparisons = TRUE, 
+  pairwise.display = "s",
+  p.adjust.method = "fdr",
+  messages = FALSE
+)
+```
+
 
 ### 3.2 Cycle Plot of Weather Data Over the Years
 
